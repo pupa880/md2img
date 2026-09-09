@@ -8,59 +8,71 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" id="hljs-dark" href="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.11.1/styles/nord.min.css">
+  <link rel="stylesheet" id="hljs-light" href="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.11.1/styles/github.min.css" disabled>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.11.1/highlight.min.js"></script>
   <style>
     :root {
-      --bg: #eceff4;
-      --surface: #ffffff;
-      --surface-2: #f0f4f8;
-      --text: #2e3440;
-      --text-muted: #5e6776;
-      --accent: #5e81ac;
-      --accent-2: #81a1c1;
-      --border: #d8dee9;
+      --bg: #ffffff;
+      --surface-2: #f2f2f2;
+      --text: #1a1a1a;
+      --text-muted: #757575;
+      --link: #0057ff;
+      --border: #e3e3e3;
       --code-bg: #2e3440;
       --code-text: #d8dee9;
-      --shadow: 0 8px 32px rgba(46, 52, 64, 0.12);
-      --radius: 10px;
+      --code-border: rgba(255, 255, 255, 0.08);
       --preview-font-size: 17px;
-      --preview-line-height: 1.85;
-      --preview-padding: 56px;
+      --preview-line-height: 1.6;
+      --preview-block-gap: 1.2em;
+      --preview-heading-gap-top: 0em;
+      --preview-heading-gap-bottom: 0.75em;
+      --preview-padding-y: 46px;
+      --preview-padding-x: 44px;
+      /* 编辑器界面用色，与导出图片的颜色解耦 */
+      --app-bg: #f0f0f0;
+      --app-surface: #ffffff;
+      --app-border: #e3e3e3;
+      --app-text: #1a1a1a;
+      --app-muted: #757575;
+      --app-radius: 8px;
+      --drawer-width: 320px;
     }
     * { box-sizing: border-box; }
     html, body {
       margin: 0;
       height: 100%;
       font-family: "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
+      background: var(--app-bg);
+      color: var(--app-text);
     }
     .header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding: 14px 24px;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
+      background: var(--app-surface);
+      border-bottom: 1px solid var(--app-border);
       box-shadow: 0 1px 2px rgba(46, 52, 64, 0.04);
     }
-    .header h1 { font-size: 18px; margin: 0; font-weight: 700; color: var(--accent); }
+    .header h1 { font-size: 18px; margin: 0; font-weight: 700; color: var(--app-text); }
     .actions { display: flex; gap: 12px; }
     button {
       padding: 8px 18px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      background: var(--surface);
+      border: 1px solid var(--app-border);
+      border-radius: var(--app-radius);
+      background: var(--app-surface);
       cursor: pointer;
       font-size: 14px;
       font-weight: 500;
-      color: var(--text);
+      color: var(--app-text);
       transition: background .2s, border-color .2s, transform .1s;
     }
-    button:hover { background: var(--surface-2); border-color: var(--accent-2); }
+    button:hover { background: #f2f2f2; border-color: #b9b9b9; }
     button:active { transform: translateY(1px); }
-    button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-    button.primary:hover { background: #4c6a90; border-color: #4c6a90; }
+    button.primary { background: var(--app-text); color: #fff; border-color: var(--app-text); }
+    button.primary:hover { background: #000; border-color: #000; }
     .container {
       display: flex;
       height: calc(100% - 57px);
@@ -77,9 +89,9 @@
       font-weight: 700;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: var(--accent-2);
+      color: var(--app-muted);
       background: rgba(255,255,255,0.6);
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--app-border);
     }
     textarea {
       flex: 1;
@@ -91,61 +103,68 @@
       font-family: "Noto Sans Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
       font-size: 14px;
       line-height: 1.7;
-      background: var(--surface);
-      color: var(--text);
+      background: var(--app-surface);
+      color: var(--app-text);
     }
     .preview-wrap {
       flex: 1;
       overflow: auto;
       padding: 32px 24px;
-      background: var(--bg);
+      background: var(--app-bg);
     }
     #preview {
       width: 800px;
       max-width: 100%;
       margin: 0 auto;
-      padding: var(--preview-padding) calc(var(--preview-padding) + 8px);
-      background: var(--surface);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
+      padding: var(--preview-padding-y) var(--preview-padding-x);
+      background: var(--bg);
       font-size: var(--preview-font-size);
       line-height: var(--preview-line-height);
       color: var(--text);
     }
     #preview > *:first-child { margin-top: 0; }
     #preview > *:last-child { margin-bottom: 0; }
+    /* 标题间距用 padding 实现：不参与外边距合并，滑杆值始终精确生效 */
     #preview h1, #preview h2, #preview h3, #preview h4, #preview h5, #preview h6 {
-      color: var(--accent);
+      color: var(--text);
       font-weight: 700;
-      line-height: 1.3;
-      margin-top: 1.6em;
-      margin-bottom: 0.6em;
+      line-height: 1.4;
+      margin: 0;
+      padding-top: var(--preview-heading-gap-top);
+      padding-bottom: var(--preview-heading-gap-bottom);
     }
-    #preview h1 { font-size: 2.2em; border-bottom: 2px solid var(--border); padding-bottom: 0.3em; }
-    #preview h2 { font-size: 1.7em; }
-    #preview h3 { font-size: 1.4em; color: var(--accent-2); }
-    #preview p { margin: 1em 0; }
-    #preview a { color: var(--accent); text-decoration: none; }
-    #preview a:hover { text-decoration: underline; }
-    #preview img { max-width: 100%; border-radius: 6px; }
+    #preview > :is(h1,h2,h3,h4,h5,h6):first-child { padding-top: 0; }
+    #preview > :is(h1,h2,h3,h4,h5,h6):last-child { padding-bottom: 0; }
+    #preview h1 { font-size: 1.8em; line-height: 1.35; letter-spacing: -0.01em; padding-bottom: calc(var(--preview-heading-gap-bottom) * 1.3); }
+    #preview h2 { font-size: 1.38em; }
+    #preview h3 { font-size: 1.16em; }
+    #preview h4 { font-size: 1.02em; }
+    #preview h5, #preview h6 { font-size: 1em; color: var(--text-muted); }
+    /* 块元素只用下外边距，避免与标题间距叠在一起（左/右 0 用于重置 blockquote 的 UA 外边距） */
+    #preview p, #preview pre, #preview blockquote, #preview ul, #preview ol, #preview table {
+      margin: 0 0 var(--preview-block-gap);
+    }
+    #preview strong { font-weight: 700; }
+    #preview a {
+      color: var(--link);
+      text-decoration: none;
+    }
+    #preview img { max-width: 100%; border-radius: 4px; }
     #preview hr {
       border: none;
       height: 1px;
       background: var(--border);
-      margin: 2em 0;
+      margin: 1.9em 0;
     }
     #preview pre {
       background: var(--code-bg);
       color: var(--code-text);
-      padding: 20px 22px;
-      border-radius: var(--radius);
+      padding: 18px 20px;
+      border-radius: 6px;
+      border: 1px solid var(--code-border);
       overflow-x: auto;
-      margin: 1.2em 0;
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
     }
     #preview pre code {
-      font-family: "Noto Sans Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-      font-size: 0.88em;
       background: transparent;
       color: inherit;
       padding: 0;
@@ -155,36 +174,34 @@
       font-family: "Noto Sans Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
       font-size: 0.88em;
       background: var(--surface-2);
-      color: var(--accent);
+      color: var(--text);
       padding: 2px 6px;
-      border-radius: 5px;
+      border-radius: 4px;
     }
     #preview blockquote {
-      margin: 1.2em 0;
-      padding: 14px 20px;
-      border-left: 4px solid var(--accent-2);
-      background: var(--surface-2);
-      border-radius: 0 var(--radius) var(--radius) 0;
+      padding: 0 0 0 18px;
+      border-left: 3px solid var(--border);
       color: var(--text-muted);
     }
-    #preview blockquote p:first-child { margin-top: 0; }
     #preview blockquote p:last-child { margin-bottom: 0; }
-    #preview ul, #preview ol { padding-left: 1.6em; margin: 1em 0; }
+    #preview ul, #preview ol { padding-left: 1.6em; }
     #preview li { margin: 0.35em 0; }
+    #preview li:first-child { margin-top: 0; }
+    #preview li:last-child { margin-bottom: 0; }
     #preview li > ul, #preview li > ol { margin: 0.2em 0; }
-    #preview table { border-collapse: collapse; width: 100%; margin: 1.2em 0; }
-    #preview th, #preview td { border: 1px solid var(--border); padding: 10px 14px; }
-    #preview th { background: var(--surface-2); font-weight: 600; color: var(--accent); }
-    #preview tr:nth-child(even) { background: rgba(240,244,248,0.5); }
+    #preview table { border-collapse: collapse; width: 100%; font-size: 0.96em; }
+    #preview th, #preview td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; }
+    #preview th { background: var(--surface-2); font-weight: 600; color: var(--text); }
+    #preview tr:nth-child(even) { background: var(--surface-2); }
     .toast {
       position: fixed;
       bottom: 24px;
       left: 50%;
       transform: translateX(-50%);
       padding: 10px 20px;
-      background: var(--text);
+      background: var(--app-text);
       color: #fff;
-      border-radius: var(--radius);
+      border-radius: var(--app-radius);
       font-size: 14px;
       opacity: 0;
       pointer-events: none;
@@ -193,25 +210,21 @@
     }
     .toast.show { opacity: 1; }
 
-    .drawer-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(46, 52, 64, 0.35);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity .25s;
-      z-index: 200;
+    /* 抽屉打开时：把源码面板让出来，预览铺到抽屉左边，边调边看 */
+    @media (min-width: 769px) {
+      body.drawer-open .header { padding-right: calc(24px + var(--drawer-width)); }
+      body.drawer-open .container { padding-right: var(--drawer-width); }
+      body.drawer-open .pane-source { display: none; }
     }
-    .drawer-backdrop.open { opacity: 1; pointer-events: auto; }
 
     .drawer {
       position: fixed;
       top: 0;
       right: 0;
-      width: 320px;
+      width: var(--drawer-width);
       max-width: 90vw;
       height: 100%;
-      background: var(--surface);
+      background: var(--app-surface);
       box-shadow: -4px 0 24px rgba(46, 52, 64, 0.12);
       transform: translateX(100%);
       transition: transform .25s ease-out;
@@ -226,9 +239,9 @@
       align-items: center;
       justify-content: space-between;
       padding: 16px 20px;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--app-border);
     }
-    .drawer-header h2 { margin: 0; font-size: 16px; color: var(--text); }
+    .drawer-header h2 { margin: 0; font-size: 16px; color: var(--app-text); }
     .drawer-header button {
       padding: 6px 12px;
       font-size: 13px;
@@ -246,29 +259,41 @@
       justify-content: space-between;
       font-size: 13px;
       font-weight: 500;
-      color: var(--text-muted);
+      color: var(--app-muted);
       margin-bottom: 8px;
     }
     .field input[type="color"] {
       width: 100%;
       height: 36px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      background: var(--surface);
+      border: 1px solid var(--app-border);
+      border-radius: var(--app-radius);
+      background: var(--app-surface);
       cursor: pointer;
     }
     .field input[type="range"] {
       width: 100%;
-      accent-color: var(--accent);
+      accent-color: var(--app-text);
     }
     .field .value {
       font-family: "Noto Sans Mono", monospace;
-      color: var(--accent);
+      color: var(--app-text);
+    }
+    .field select {
+      width: 100%;
+      height: 36px;
+      padding: 0 10px;
+      border: 1px solid var(--app-border);
+      border-radius: var(--app-radius);
+      background: var(--app-surface);
+      color: var(--app-text);
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
     }
 
     .drawer-footer {
       padding: 16px 20px;
-      border-top: 1px solid var(--border);
+      border-top: 1px solid var(--app-border);
       display: flex;
       gap: 10px;
     }
@@ -277,7 +302,7 @@
     @media (max-width: 768px) {
       .container { flex-direction: column; height: auto; }
       .pane { min-height: 400px; }
-      #preview { width: 100%; padding: 32px; }
+      #preview { width: 100%; }
     }
   </style>
 </head>
@@ -292,7 +317,7 @@
   </div>
 
   <div class="container">
-    <div class="pane">
+    <div class="pane pane-source">
       <div class="pane-label">Markdown 源码</div>
       <textarea id="editor" placeholder="在此输入 Markdown 内容..."></textarea>
     </div>
@@ -306,7 +331,6 @@
 
   <div id="toast" class="toast"></div>
 
-  <div id="drawerBackdrop" class="drawer-backdrop"></div>
   <div id="drawer" class="drawer">
     <div class="drawer-header">
       <h2>样式设置</h2>
@@ -318,36 +342,43 @@
         <input type="color" id="setting-bg" data-var="--bg">
       </div>
       <div class="field">
-        <label>卡片底色</label>
-        <input type="color" id="setting-surface" data-var="--surface">
-      </div>
-      <div class="field">
-        <label>主题色</label>
-        <input type="color" id="setting-accent" data-var="--accent">
-      </div>
-      <div class="field">
         <label>文字颜色</label>
         <input type="color" id="setting-text" data-var="--text">
       </div>
       <div class="field">
-        <label>代码块背景</label>
-        <input type="color" id="setting-code-bg" data-var="--code-bg">
+        <label>代码块主题</label>
+        <select id="setting-codeTheme">
+          <option value="dark">深色模式</option>
+          <option value="light">浅色模式</option>
+        </select>
       </div>
       <div class="field">
         <label>正文字号 <span class="value" id="val-fontSize"></span></label>
         <input type="range" id="setting-fontSize" min="12" max="24" data-var="--preview-font-size">
       </div>
       <div class="field">
-        <label>行高 <span class="value" id="val-lineHeight"></span></label>
+        <label>行间距 <span class="value" id="val-lineHeight"></span></label>
         <input type="range" id="setting-lineHeight" min="1" max="3" step="0.05" data-var="--preview-line-height">
       </div>
       <div class="field">
-        <label>卡片内边距 <span class="value" id="val-padding"></span></label>
-        <input type="range" id="setting-padding" min="20" max="80" data-var="--preview-padding">
+        <label>段间距 <span class="value" id="val-blockGap"></span></label>
+        <input type="range" id="setting-blockGap" min="0" max="3" step="0.05" data-var="--preview-block-gap">
       </div>
       <div class="field">
-        <label>圆角 <span class="value" id="val-radius"></span></label>
-        <input type="range" id="setting-radius" min="0" max="24" data-var="--radius">
+        <label>标题上间距（额外） <span class="value" id="val-headingGapTop"></span></label>
+        <input type="range" id="setting-headingGapTop" min="0" max="4" step="0.05" data-var="--preview-heading-gap-top">
+      </div>
+      <div class="field">
+        <label>标题下间距 <span class="value" id="val-headingGapBottom"></span></label>
+        <input type="range" id="setting-headingGapBottom" min="0" max="4" step="0.05" data-var="--preview-heading-gap-bottom">
+      </div>
+      <div class="field">
+        <label>上下边距 <span class="value" id="val-paddingY"></span></label>
+        <input type="range" id="setting-paddingY" min="0" max="120" data-var="--preview-padding-y">
+      </div>
+      <div class="field">
+        <label>左右边距 <span class="value" id="val-paddingX"></span></label>
+        <input type="range" id="setting-paddingX" min="0" max="120" data-var="--preview-padding-x">
       </div>
     </div>
     <div class="drawer-footer">
@@ -370,54 +401,63 @@
     const toast = document.getElementById('toast');
     const styleBtn = document.getElementById('styleBtn');
     const drawer = document.getElementById('drawer');
-    const drawerBackdrop = document.getElementById('drawerBackdrop');
     const closeDrawer = document.getElementById('closeDrawer');
     const applyStyle = document.getElementById('applyStyle');
     const resetStyle = document.getElementById('resetStyle');
 
     const styleDefaults = {
-      '--bg': '#eceff4',
-      '--surface': '#ffffff',
-      '--accent': '#5e81ac',
-      '--text': '#2e3440',
-      '--code-bg': '#2e3440',
+      '--bg': '#ffffff',
+      '--text': '#1a1a1a',
       '--preview-font-size': '17',
-      '--preview-line-height': '1.85',
-      '--preview-padding': '56',
-      '--radius': '10'
+      '--preview-line-height': '1.6',
+      '--preview-block-gap': '1.2',
+      '--preview-heading-gap-top': '0',
+      '--preview-heading-gap-bottom': '0.75',
+      '--preview-padding-y': '46',
+      '--preview-padding-x': '44',
+      codeTheme: 'dark'
     };
 
     const root = document.documentElement;
 
     function applyStyleSettings(settings) {
-      for (const [key, value] of Object.entries(settings)) {
-        let cssValue = value;
-        if (key === '--preview-font-size' || key === '--preview-padding') {
-          cssValue = value + 'px';
+      for (const [key, value] of Object.entries(styleDefaults)) {
+        if (!key.startsWith('--')) continue;
+        let cssValue = settings[key] != null ? settings[key] : value;
+        if (key === '--preview-font-size' || key.startsWith('--preview-padding')) {
+          cssValue = cssValue + 'px';
+        } else if (key === '--preview-block-gap' || key.startsWith('--preview-heading-gap')) {
+          cssValue = cssValue + 'em';
         }
         root.style.setProperty(key, cssValue);
       }
-      // derived colors
-      const accent = settings['--accent'] || styleDefaults['--accent'];
-      root.style.setProperty('--accent-2', lightenColor(accent, 20));
-      root.style.setProperty('--border', mixColor(settings['--bg'] || styleDefaults['--bg'], 0.85));
-      root.style.setProperty('--surface-2', mixColor(settings['--surface'] || styleDefaults['--surface'], 0.94));
+      // 派生色：相对「背景色」混向「文字颜色」，深浅背景都自适应
+      const bg = settings['--bg'] || styleDefaults['--bg'];
+      const text = settings['--text'] || styleDefaults['--text'];
+      root.style.setProperty('--text-muted', mixColor(bg, text, 0.62));
+      root.style.setProperty('--border', mixColor(bg, text, 0.14));
+      root.style.setProperty('--surface-2', mixColor(bg, text, 0.06));
+      applyCodeTheme(settings.codeTheme === 'light' ? 'light' : 'dark', bg, text);
     }
 
-    function lightenColor(hex, percent) {
-      const num = parseInt(hex.replace('#', ''), 16);
-      const amt = Math.round(2.55 * percent);
-      const R = Math.min(255, (num >> 16) + amt);
-      const G = Math.min(255, ((num >> 8) & 0x00ff) + amt);
-      const B = Math.min(255, (num & 0x0000ff) + amt);
-      return '#' + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
+    // 代码块主题：深色用 Nord，浅色用 GitHub（highlight.js 自带主题，切换 <link disabled>）
+    function applyCodeTheme(theme, bg, text) {
+      const dark = theme !== 'light';
+      root.style.setProperty('--code-bg', dark ? '#2e3440' : '#f6f8fa');
+      root.style.setProperty('--code-text', dark ? '#d8dee9' : '#24292e');
+      root.style.setProperty('--code-border', dark ? 'rgba(255,255,255,0.08)' : mixColor(bg, text, 0.14));
+      const darkSheet = document.getElementById('hljs-dark');
+      const lightSheet = document.getElementById('hljs-light');
+      darkSheet.disabled = !dark;
+      lightSheet.disabled = dark;
     }
 
-    function mixColor(hex, factor) {
-      const num = parseInt(hex.replace('#', ''), 16);
-      const R = Math.round(((num >> 16) & 0xff) * factor + 240 * (1 - factor));
-      const G = Math.round(((num >> 8) & 0xff) * factor + 240 * (1 - factor));
-      const B = Math.round((num & 0x0000ff) * factor + 240 * (1 - factor));
+    function mixColor(from, to, amount) {
+      const a = parseInt(from.replace('#', ''), 16);
+      const b = parseInt(to.replace('#', ''), 16);
+      const R = Math.round(((a >> 16) & 0xff) * (1 - amount) + ((b >> 16) & 0xff) * amount);
+      const G = Math.round(((a >> 8) & 0xff) * (1 - amount) + ((b >> 8) & 0xff) * amount);
+      const B = Math.round((a & 0xff) * (1 - amount) + (b & 0xff) * amount);
       return '#' + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
     }
 
@@ -429,6 +469,8 @@
         if (input.type === 'range') value = String(parseFloat(value));
         settings[key] = value;
       });
+      const themeSelect = document.getElementById('setting-codeTheme');
+      settings.codeTheme = themeSelect.value;
       return settings;
     }
 
@@ -439,11 +481,21 @@
         const valueSpan = document.getElementById('val-' + input.id.replace('setting-', ''));
         if (valueSpan) valueSpan.textContent = input.value;
       });
+      const themeSelect = document.getElementById('setting-codeTheme');
+      themeSelect.value = settings.codeTheme || 'dark';
+    }
+
+    // 读控件 → 应用样式 → 回写数值标签
+    function applyFromInputs() {
+      const settings = readSettingsFromInputs();
+      applyStyleSettings(settings);
+      syncInputsToSettings(settings);
+      return settings;
     }
 
     function loadSettings() {
       try {
-        const saved = localStorage.getItem('md2img-style');
+        const saved = localStorage.getItem('md2img-style-v5');
         return saved ? { ...styleDefaults, ...JSON.parse(saved) } : { ...styleDefaults };
       } catch {
         return { ...styleDefaults };
@@ -451,56 +503,86 @@
     }
 
     function saveSettings(settings) {
-      localStorage.setItem('md2img-style', JSON.stringify(settings));
+      localStorage.setItem('md2img-style-v5', JSON.stringify(settings));
     }
 
     function openDrawer() {
       drawer.classList.add('open');
-      drawerBackdrop.classList.add('open');
+      document.body.classList.add('drawer-open');
     }
 
     function closeDrawerFn() {
       drawer.classList.remove('open');
-      drawerBackdrop.classList.remove('open');
+      document.body.classList.remove('drawer-open');
     }
 
-    let currentSettings = loadSettings();
-    applyStyleSettings(currentSettings);
-    syncInputsToSettings(currentSettings);
+    const initialSettings = loadSettings();
+    applyStyleSettings(initialSettings);
+    syncInputsToSettings(initialSettings);
 
     styleBtn.addEventListener('click', openDrawer);
     closeDrawer.addEventListener('click', closeDrawerFn);
-    drawerBackdrop.addEventListener('click', closeDrawerFn);
-
-    document.querySelectorAll('#drawer input[data-var]').forEach(input => {
-      input.addEventListener('input', () => {
-        const settings = readSettingsFromInputs();
-        applyStyleSettings(settings);
-        syncInputsToSettings(settings);
-      });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && drawer.classList.contains('open')) closeDrawerFn();
     });
 
+    document.querySelectorAll('#drawer input[data-var]').forEach(input => {
+      input.addEventListener('input', applyFromInputs);
+    });
+
+    document.getElementById('setting-codeTheme').addEventListener('change', applyFromInputs);
+
     applyStyle.addEventListener('click', () => {
-      currentSettings = readSettingsFromInputs();
-      saveSettings(currentSettings);
+      saveSettings(readSettingsFromInputs());
       closeDrawerFn();
       showToast('样式已保存');
     });
 
     resetStyle.addEventListener('click', () => {
-      currentSettings = { ...styleDefaults };
-      applyStyleSettings(currentSettings);
-      syncInputsToSettings(currentSettings);
-      saveSettings(currentSettings);
+      const settings = { ...styleDefaults };
+      applyStyleSettings(settings);
+      syncInputsToSettings(settings);
+      saveSettings(settings);
       showToast('样式已重置');
     });
 
-    const defaultText = `# Markdown 转图片\n\n这是一款支持 **实时预览**、**下载 PNG** 和 **复制到剪贴板** 的 Markdown 转图片工具。\n\n## 特性\n\n- 左侧输入 Markdown，右侧实时渲染\n- 自动适配中文加粗：**「中文强调」**、**【书名号】** 都能正确显示\n- 代码块采用 Nord 深色主题\n- 一键导出为高清 PNG\n\n## 示例\n\n> 这是一段引用文本。\n> 可以用来展示引用块的样式。\n\n行内代码如 \`marked.parse(text)\` 会高亮显示。\n\n\`\`\`js\nfunction hello() {\n  console.log('Hello, Markdown!');\n}\n\`\`\`\n\n祝你使用愉快！\n`;
+    const defaultText = `# Markdown 转图片
+
+这是一款支持 **实时预览**、**下载 PNG** 和 **复制到剪贴板** 的 Markdown 转图片工具。
+
+## 特性
+
+- 左侧输入 Markdown，右侧实时渲染
+- 自动适配中文加粗：**「中文强调」**、**【书名号】** 都能正确显示
+- 代码块支持深色 / 浅色两种高亮主题
+- 一键导出为高清 PNG
+
+## 示例
+
+> 这是一段引用文本。
+> 可以用来展示引用块的样式。
+
+行内代码如 \`marked.parse(text)\` 会高亮显示。
+
+\`\`\`js
+function hello() {
+  console.log('Hello, Markdown!');
+}
+\`\`\`
+
+祝你使用愉快！
+`;
 
     editor.value = defaultText;
 
     function render() {
       preview.innerHTML = marked.parse(editor.value);
+      highlightCode();
+    }
+
+    function highlightCode() {
+      if (!window.hljs) return;
+      preview.querySelectorAll('pre code').forEach((el) => window.hljs.highlightElement(el));
     }
 
     function showToast(msg) {
@@ -510,18 +592,12 @@
     }
 
     async function toCanvas() {
-      // 临时隐藏阴影/圆角，确保截图边缘干净
-      const oldShadow = preview.style.boxShadow;
-      const oldRadius = preview.style.borderRadius;
-      preview.style.boxShadow = 'none';
-      preview.style.borderRadius = '0';
+      const bg = getComputedStyle(root).getPropertyValue('--bg').trim() || '#ffffff';
       const canvas = await html2canvas(preview, {
         scale: 2,
-        backgroundColor: '#ffffff',
+        backgroundColor: bg,
         useCORS: true
       });
-      preview.style.boxShadow = oldShadow;
-      preview.style.borderRadius = oldRadius;
       return canvas;
     }
 

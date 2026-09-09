@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Markdown 转图片</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🖼️</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <style>
+    :root {
+      --bg: #eceff4;
+      --surface: #ffffff;
+      --surface-2: #f0f4f8;
+      --text: #2e3440;
+      --text-muted: #5e6776;
+      --accent: #5e81ac;
+      --accent-2: #81a1c1;
+      --border: #d8dee9;
+      --code-bg: #2e3440;
+      --code-text: #d8dee9;
+      --shadow: 0 8px 32px rgba(46, 52, 64, 0.12);
+      --radius: 10px;
+      --preview-font-size: 17px;
+      --preview-line-height: 1.85;
+      --preview-padding: 56px;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      font-family: "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 24px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 1px 2px rgba(46, 52, 64, 0.04);
+    }
+    .header h1 { font-size: 18px; margin: 0; font-weight: 700; color: var(--accent); }
+    .actions { display: flex; gap: 12px; }
+    button {
+      padding: 8px 18px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+      transition: background .2s, border-color .2s, transform .1s;
+    }
+    button:hover { background: var(--surface-2); border-color: var(--accent-2); }
+    button:active { transform: translateY(1px); }
+    button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    button.primary:hover { background: #4c6a90; border-color: #4c6a90; }
+    .container {
+      display: flex;
+      height: calc(100% - 57px);
+    }
+    .pane {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 320px;
+    }
+    .pane-label {
+      padding: 12px 20px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent-2);
+      background: rgba(255,255,255,0.6);
+      border-bottom: 1px solid var(--border);
+    }
+    textarea {
+      flex: 1;
+      width: 100%;
+      padding: 20px;
+      border: none;
+      outline: none;
+      resize: none;
+      font-family: "Noto Sans Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 14px;
+      line-height: 1.7;
+      background: var(--surface);
+      color: var(--text);
+    }
+    .preview-wrap {
+      flex: 1;
+      overflow: auto;
+      padding: 32px 24px;
+      background: var(--bg);
+    }
+    #preview {
+      width: 800px;
+      max-width: 100%;
+      margin: 0 auto;
+      padding: var(--preview-padding) calc(var(--preview-padding) + 8px);
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      font-size: var(--preview-font-size);
+      line-height: var(--preview-line-height);
+      color: var(--text);
+    }
+    #preview > *:first-child { margin-top: 0; }
+    #preview > *:last-child { margin-bottom: 0; }
+    #preview h1, #preview h2, #preview h3, #preview h4, #preview h5, #preview h6 {
+      color: var(--accent);
+      font-weight: 700;
+      line-height: 1.3;
+      margin-top: 1.6em;
+      margin-bottom: 0.6em;
+    }
+    #preview h1 { font-size: 2.2em; border-bottom: 2px solid var(--border); padding-bottom: 0.3em; }
+    #preview h2 { font-size: 1.7em; }
+    #preview h3 { font-size: 1.4em; color: var(--accent-2); }
+    #preview p { margin: 1em 0; }
+    #preview a { color: var(--accent); text-decoration: none; }
+    #preview a:hover { text-decoration: underline; }
+    #preview img { max-width: 100%; border-radius: 6px; }
+    #preview hr {
+      border: none;
+      height: 1px;
+      background: var(--border);
+      margin: 2em 0;
+    }
+    #preview pre {
+      background: var(--code-bg);
+      color: var(--code-text);
+      padding: 20px 22px;
+      border-radius: var(--radius);
+      overflow-x: auto;
+      margin: 1.2em 0;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
+    }
+    #preview pre code {
+      font-family: "Noto Sans Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 0.88em;
+      background: transparent;
+      color: inherit;
+      padding: 0;
+      border-radius: 0;
+    }
+    #preview code {
+      font-family: "Noto Sans Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 0.88em;
+      background: var(--surface-2);
+      color: var(--accent);
+      padding: 2px 6px;
+      border-radius: 5px;
+    }
+    #preview blockquote {
+      margin: 1.2em 0;
+      padding: 14px 20px;
+      border-left: 4px solid var(--accent-2);
+      background: var(--surface-2);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      color: var(--text-muted);
+    }
+    #preview blockquote p:first-child { margin-top: 0; }
+    #preview blockquote p:last-child { margin-bottom: 0; }
+    #preview ul, #preview ol { padding-left: 1.6em; margin: 1em 0; }
+    #preview li { margin: 0.35em 0; }
+    #preview li > ul, #preview li > ol { margin: 0.2em 0; }
+    #preview table { border-collapse: collapse; width: 100%; margin: 1.2em 0; }
+    #preview th, #preview td { border: 1px solid var(--border); padding: 10px 14px; }
+    #preview th { background: var(--surface-2); font-weight: 600; color: var(--accent); }
+    #preview tr:nth-child(even) { background: rgba(240,244,248,0.5); }
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 20px;
+      background: var(--text);
+      color: #fff;
+      border-radius: var(--radius);
+      font-size: 14px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .3s;
+      z-index: 100;
+    }
+    .toast.show { opacity: 1; }
+
+    .drawer-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(46, 52, 64, 0.35);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .25s;
+      z-index: 200;
+    }
+    .drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+
+    .drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 320px;
+      max-width: 90vw;
+      height: 100%;
+      background: var(--surface);
+      box-shadow: -4px 0 24px rgba(46, 52, 64, 0.12);
+      transform: translateX(100%);
+      transition: transform .25s ease-out;
+      z-index: 210;
+      display: flex;
+      flex-direction: column;
+    }
+    .drawer.open { transform: translateX(0); }
+
+    .drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .drawer-header h2 { margin: 0; font-size: 16px; color: var(--text); }
+    .drawer-header button {
+      padding: 6px 12px;
+      font-size: 13px;
+    }
+
+    .drawer-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    .field { margin-bottom: 18px; }
+    .field label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .field input[type="color"] {
+      width: 100%;
+      height: 36px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+    }
+    .field input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+    .field .value {
+      font-family: "Noto Sans Mono", monospace;
+      color: var(--accent);
+    }
+
+    .drawer-footer {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 10px;
+    }
+    .drawer-footer button { flex: 1; }
+
+    @media (max-width: 768px) {
+      .container { flex-direction: column; height: auto; }
+      .pane { min-height: 400px; }
+      #preview { width: 100%; padding: 32px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>📝 Markdown 转图片</h1>
+    <div class="actions">
+      <button id="styleBtn">⚙️ 样式</button>
+      <button id="copyBtn">复制图片</button>
+      <button id="downloadBtn" class="primary">下载图片</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="pane">
+      <div class="pane-label">Markdown 源码</div>
+      <textarea id="editor" placeholder="在此输入 Markdown 内容..."></textarea>
+    </div>
+    <div class="pane">
+      <div class="pane-label">实时预览</div>
+      <div class="preview-wrap">
+        <div id="preview"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <div id="drawerBackdrop" class="drawer-backdrop"></div>
+  <div id="drawer" class="drawer">
+    <div class="drawer-header">
+      <h2>样式设置</h2>
+      <button id="closeDrawer">关闭</button>
+    </div>
+    <div class="drawer-body">
+      <div class="field">
+        <label>背景色</label>
+        <input type="color" id="setting-bg" data-var="--bg">
+      </div>
+      <div class="field">
+        <label>卡片底色</label>
+        <input type="color" id="setting-surface" data-var="--surface">
+      </div>
+      <div class="field">
+        <label>主题色</label>
+        <input type="color" id="setting-accent" data-var="--accent">
+      </div>
+      <div class="field">
+        <label>文字颜色</label>
+        <input type="color" id="setting-text" data-var="--text">
+      </div>
+      <div class="field">
+        <label>代码块背景</label>
+        <input type="color" id="setting-code-bg" data-var="--code-bg">
+      </div>
+      <div class="field">
+        <label>正文字号 <span class="value" id="val-fontSize"></span></label>
+        <input type="range" id="setting-fontSize" min="12" max="24" data-var="--preview-font-size">
+      </div>
+      <div class="field">
+        <label>行高 <span class="value" id="val-lineHeight"></span></label>
+        <input type="range" id="setting-lineHeight" min="1" max="3" step="0.05" data-var="--preview-line-height">
+      </div>
+      <div class="field">
+        <label>卡片内边距 <span class="value" id="val-padding"></span></label>
+        <input type="range" id="setting-padding" min="20" max="80" data-var="--preview-padding">
+      </div>
+      <div class="field">
+        <label>圆角 <span class="value" id="val-radius"></span></label>
+        <input type="range" id="setting-radius" min="0" max="24" data-var="--radius">
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <button id="resetStyle">重置</button>
+      <button id="applyStyle" class="primary">确定</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { marked } from 'https://cdn.jsdelivr.net/npm/marked@17/lib/marked.esm.js';
+    import markedCjkFriendly from 'https://cdn.jsdelivr.net/npm/marked-cjk-friendly/dist/index.js';
+
+    marked.use(markedCjkFriendly());
+
+    const editor = document.getElementById('editor');
+    const preview = document.getElementById('preview');
+    const previewWrap = document.querySelector('.preview-wrap');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const toast = document.getElementById('toast');
+    const styleBtn = document.getElementById('styleBtn');
+    const drawer = document.getElementById('drawer');
+    const drawerBackdrop = document.getElementById('drawerBackdrop');
+    const closeDrawer = document.getElementById('closeDrawer');
+    const applyStyle = document.getElementById('applyStyle');
+    const resetStyle = document.getElementById('resetStyle');
+
+    const styleDefaults = {
+      '--bg': '#eceff4',
+      '--surface': '#ffffff',
+      '--accent': '#5e81ac',
+      '--text': '#2e3440',
+      '--code-bg': '#2e3440',
+      '--preview-font-size': '17',
+      '--preview-line-height': '1.85',
+      '--preview-padding': '56',
+      '--radius': '10'
+    };
+
+    const root = document.documentElement;
+
+    function applyStyleSettings(settings) {
+      for (const [key, value] of Object.entries(settings)) {
+        let cssValue = value;
+        if (key === '--preview-font-size' || key === '--preview-padding') {
+          cssValue = value + 'px';
+        }
+        root.style.setProperty(key, cssValue);
+      }
+      // derived colors
+      const accent = settings['--accent'] || styleDefaults['--accent'];
+      root.style.setProperty('--accent-2', lightenColor(accent, 20));
+      root.style.setProperty('--border', mixColor(settings['--bg'] || styleDefaults['--bg'], 0.85));
+      root.style.setProperty('--surface-2', mixColor(settings['--surface'] || styleDefaults['--surface'], 0.94));
+    }
+
+    function lightenColor(hex, percent) {
+      const num = parseInt(hex.replace('#', ''), 16);
+      const amt = Math.round(2.55 * percent);
+      const R = Math.min(255, (num >> 16) + amt);
+      const G = Math.min(255, ((num >> 8) & 0x00ff) + amt);
+      const B = Math.min(255, (num & 0x0000ff) + amt);
+      return '#' + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
+    }
+
+    function mixColor(hex, factor) {
+      const num = parseInt(hex.replace('#', ''), 16);
+      const R = Math.round(((num >> 16) & 0xff) * factor + 240 * (1 - factor));
+      const G = Math.round(((num >> 8) & 0xff) * factor + 240 * (1 - factor));
+      const B = Math.round((num & 0x0000ff) * factor + 240 * (1 - factor));
+      return '#' + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
+    }
+
+    function readSettingsFromInputs() {
+      const settings = {};
+      document.querySelectorAll('#drawer input[data-var]').forEach(input => {
+        const key = input.dataset.var;
+        let value = input.value;
+        if (input.type === 'range') value = String(parseFloat(value));
+        settings[key] = value;
+      });
+      return settings;
+    }
+
+    function syncInputsToSettings(settings) {
+      document.querySelectorAll('#drawer input[data-var]').forEach(input => {
+        const key = input.dataset.var;
+        if (settings[key] !== undefined) input.value = settings[key];
+        const valueSpan = document.getElementById('val-' + input.id.replace('setting-', ''));
+        if (valueSpan) valueSpan.textContent = input.value;
+      });
+    }
+
+    function loadSettings() {
+      try {
+        const saved = localStorage.getItem('md2img-style');
+        return saved ? { ...styleDefaults, ...JSON.parse(saved) } : { ...styleDefaults };
+      } catch {
+        return { ...styleDefaults };
+      }
+    }
+
+    function saveSettings(settings) {
+      localStorage.setItem('md2img-style', JSON.stringify(settings));
+    }
+
+    function openDrawer() {
+      drawer.classList.add('open');
+      drawerBackdrop.classList.add('open');
+    }
+
+    function closeDrawerFn() {
+      drawer.classList.remove('open');
+      drawerBackdrop.classList.remove('open');
+    }
+
+    let currentSettings = loadSettings();
+    applyStyleSettings(currentSettings);
+    syncInputsToSettings(currentSettings);
+
+    styleBtn.addEventListener('click', openDrawer);
+    closeDrawer.addEventListener('click', closeDrawerFn);
+    drawerBackdrop.addEventListener('click', closeDrawerFn);
+
+    document.querySelectorAll('#drawer input[data-var]').forEach(input => {
+      input.addEventListener('input', () => {
+        const settings = readSettingsFromInputs();
+        applyStyleSettings(settings);
+        syncInputsToSettings(settings);
+      });
+    });
+
+    applyStyle.addEventListener('click', () => {
+      currentSettings = readSettingsFromInputs();
+      saveSettings(currentSettings);
+      closeDrawerFn();
+      showToast('样式已保存');
+    });
+
+    resetStyle.addEventListener('click', () => {
+      currentSettings = { ...styleDefaults };
+      applyStyleSettings(currentSettings);
+      syncInputsToSettings(currentSettings);
+      saveSettings(currentSettings);
+      showToast('样式已重置');
+    });
+
+    const defaultText = `# Markdown 转图片\n\n这是一款支持 **实时预览**、**下载 PNG** 和 **复制到剪贴板** 的 Markdown 转图片工具。\n\n## 特性\n\n- 左侧输入 Markdown，右侧实时渲染\n- 自动适配中文加粗：**「中文强调」**、**【书名号】** 都能正确显示\n- 代码块采用 Nord 深色主题\n- 一键导出为高清 PNG\n\n## 示例\n\n> 这是一段引用文本。\n> 可以用来展示引用块的样式。\n\n行内代码如 \`marked.parse(text)\` 会高亮显示。\n\n\`\`\`js\nfunction hello() {\n  console.log('Hello, Markdown!');\n}\n\`\`\`\n\n祝你使用愉快！\n`;
+
+    editor.value = defaultText;
+
+    function render() {
+      preview.innerHTML = marked.parse(editor.value);
+    }
+
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2200);
+    }
+
+    async function toCanvas() {
+      // 临时隐藏阴影/圆角，确保截图边缘干净
+      const oldShadow = preview.style.boxShadow;
+      const oldRadius = preview.style.borderRadius;
+      preview.style.boxShadow = 'none';
+      preview.style.borderRadius = '0';
+      const canvas = await html2canvas(preview, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true
+      });
+      preview.style.boxShadow = oldShadow;
+      preview.style.borderRadius = oldRadius;
+      return canvas;
+    }
+
+    downloadBtn.addEventListener('click', async () => {
+      const canvas = await toCanvas();
+      const link = document.createElement('a');
+      link.download = 'markdown.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    });
+
+    copyBtn.addEventListener('click', async () => {
+      try {
+        const canvas = await toCanvas();
+        canvas.toBlob(async (blob) => {
+          try {
+            await navigator.clipboard.write([
+              new ClipboardItem({ 'image/png': blob })
+            ]);
+            showToast('图片已复制到剪贴板');
+          } catch (err) {
+            showToast('复制失败：' + err.message);
+          }
+        }, 'image/png');
+      } catch (err) {
+        showToast('生成图片失败：' + err.message);
+      }
+    });
+
+    // simple percentage-based scroll sync between editor and preview
+    let isSyncing = false;
+
+    function syncScroll(source, target) {
+      if (isSyncing) return;
+      const sourceMax = source.scrollHeight - source.clientHeight;
+      const targetMax = target.scrollHeight - target.clientHeight;
+      if (sourceMax <= 0 || targetMax <= 0) return;
+      const ratio = source.scrollTop / sourceMax;
+      isSyncing = true;
+      target.scrollTop = ratio * targetMax;
+      requestAnimationFrame(() => { isSyncing = false; });
+    }
+
+    editor.addEventListener('scroll', () => syncScroll(editor, previewWrap));
+    previewWrap.addEventListener('scroll', () => syncScroll(previewWrap, editor));
+
+    editor.addEventListener('input', render);
+    render();
+  </script>
+</body>
+</html>
